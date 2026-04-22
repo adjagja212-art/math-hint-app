@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>さんすうヒントアプリ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN', Meiryo, sans-serif;
+      background: linear-gradient(160deg, #e8f4fd 0%, #fef9e7 100%);
+      min-height: 100vh;
+      padding: 20px 16px 40px;
+    }
+
+    /* ---- 共通 ---- */
+    .screen { max-width: 520px; margin: 0 auto; }
+    .hidden { display: none !important; }
+
+    .app-title {
+      text-align: center;
+      font-size: 26px;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 22px 20px;
+      box-shadow: 0 3px 18px rgba(0,0,0,0.10);
+      margin-bottom: 18px;
+    }
+
+    .section-label {
+      font-size: 15px;
+      font-weight: bold;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 15px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 7px;
+    }
+
+    input[type="password"],
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #dce4ec;
+      border-radius: 12px;
+      font-size: 17px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    input:focus, textarea:focus { border-color: #3498db; }
+
+    textarea {
+      height: 130px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 18px 12px;
+      border: none;
+      border-radius: 16px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.1s, opacity 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3498db, #2471a3);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(52,152,219,0.40);
+    }
+
+    .btn-hint {
+      background: linear-gradient(135deg, #f39c12, #d68910);
+      color: #fff;
+      font-size: 26px;
+      padding: 22px 12px;
+      box-shadow: 0 4px 16px rgba(243,156,18,0.42);
+      margin-bottom: 14px;
+    }
+
+    .btn-back {
+      background: linear-gradient(135deg, #bdc3c7, #95a5a6);
+      color: #fff;
+      font-size: 16px;
+      padding: 14px 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    /* ---- 親画面 ---- */
+    .api-toggle {
+      font-size: 13px;
+      color: #3498db;
+      text-align: right;
+      margin-top: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    /* ---- 子供画面 ---- */
+    .problem-banner {
+      background: linear-gradient(135deg, #2980b9, #1a5276);
+      border-radius: 20px;
+      padding: 22px 20px;
+      margin-bottom: 20px;
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(41,128,185,0.38);
+    }
+    .problem-banner-label {
+      font-size: 14px;
+      opacity: 0.85;
+      margin-bottom: 6px;
+    }
+    .problem-banner-text {
+      font-size: 22px;
+      font-weight: bold;
+      line-height: 1.55;
+    }
+
+    .hint-counter {
+      text-align: center;
+      font-size: 17px;
+      color: #888;
+      margin-bottom: 14px;
+      min-height: 24px;
+    }
+
+    /* ヒントカード */
+    .hint-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px 18px 18px 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      border-left: 6px solid #ccc;
+      animation: slideDown 0.38s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hint-card.hint-1 { border-left-color: #2ecc71; }
+    .hint-card.hint-2 { border-left-color: #f39c12; }
+    .hint-card.hint-3 { border-left-color: #e74c3c; }
+
+    .hint-badge {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 9px;
+      color: #fff;
+    }
+    .hint-1 .hint-badge { background: #2ecc71; }
+    .hint-2 .hint-badge { background: #f39c12; }
+    .hint-3 .hint-badge { background: #e74c3c; }
+
+    .hint-text {
+      font-size: 20px;
+      line-height: 1.65;
+      color: #2c3e50;
+    }
+
+    /* ローディング */
+    .loading-box {
+      text-align: center;
+      font-size: 18px;
+      color: #888;
+      padding: 16px;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.45; }
+    }
+
+    /* エラー */
+    .error-box {
+      background: #fde8e8;
+      border: 2px solid #e74c3c;
+      border-radius: 12px;
+      padding: 16px;
+      color: #c0392b;
+      font-size: 16px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* 完了メッセージ */
+    .done-msg {
+      text-align: center;
+      font-size: 19px;
+      color: #7f8c8d;
+      background: #ecf0f1;
+      border-radius: 14px;
+      padding: 18px 14px;
+      margin-bottom: 14px;
+    }
+
+    .divider { height: 1px; background: #eee; margin: 16px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ===== 親画面 ===== -->
+<div id="parent-screen" class="screen">
+  <div class="app-title">✏️ さんすうヒントアプリ</div>
+
+  <div class="card">
+    <div class="section-label">🔑 Google Gemini APIキー</div>
+    <label for="api-key">APIキー</label>
+    <input type="password" id="api-key" placeholder="AIza..." autocomplete="off" spellcheck="false">
+    <div class="api-toggle" onclick="toggleKeyVisibility()">👁 表示 / 非表示</div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">📝 もんだいを入力する</div>
+    <label for="problem-input">算数の問題文</label>
+    <textarea id="problem-input"
+      placeholder="例：りんごが8こあります。3こたべたら、のこりは何こですか？"></textarea>
+  </div>
+
+  <button class="btn btn-primary" onclick="startChildMode()">
+    🎯 もんだいをセットする
+  </button>
+</div>
+
+<!-- ===== 子供画面 ===== -->
+<div id="child-screen" class="screen hidden">
+  <!-- 問題バナー -->
+  <div class="problem-banner">
+    <div class="problem-banner-label">📚 もんだい</div>
+    <div class="problem-banner-text" id="problem-display"></div>
+  </div>
+
+  <!-- ヒント一覧 -->
+  <div id="hints-container"></div>
+
+  <!-- ローディング -->
+  <div id="loading-box" class="loading-box hidden">🤔 ヒントをかんがえているよ…</div>
+
+  <!-- エラー -->
+  <div id="error-box" class="error-box hidden"></div>
+
+  <!-- 残り回数 -->
+  <div class="hint-counter" id="hint-counter"></div>
+
+  <!-- ヒントボタン -->
+  <button class="btn btn-hint" id="hint-btn" onclick="showNextHint()">
+    💡 ヒントをみる
+  </button>
+
+  <div class="divider"></div>
+
+  <button class="btn btn-back" onclick="backToParent()">
+    ← もどる（おうちの人むけ）
+  </button>
+</div>
+
+<script>
+  "use strict";
+
+  const MAX_HINTS = 3;
+  let hints = [];
+  let currentIndex = 0;
+  let hintsReady = false;
+
+  /* ---- 親画面 ---- */
+
+  function toggleKeyVisibility() {
+    const el = document.getElementById('api-key');
+    el.type = el.type === 'password' ? 'text' : 'password';
+  }
+
+  function startChildMode() {
+    const apiKey = document.getElementById('api-key').value.trim();
+    const problem = document.getElementById('problem-input').value.trim();
+
+    if (!apiKey) { alert('APIキーを入力してください'); return; }
+    if (!problem) { alert('もんだいを入力してください'); return; }
+
+    // API キーを保存
+    localStorage.setItem('math_hint_gemini_api_key', apiKey);
+
+    // 子供画面の初期化
+    hints = [];
+    currentIndex = 0;
+    hintsReady = false;
+    document.getElementById('hints-container').innerHTML = '';
+    setErrorBox('', true);
+    setLoading(false);
+    document.getElementById('hint-counter').textContent = '';
+    setHintBtn(true, '💡 ヒントをみる');
+    document.getElementById('problem-display').textContent = problem;
+
+    // 画面切替
+    document.getElementById('parent-screen').classList.add('hidden');
+    document.getElementById('child-screen').classList.remove('hidden');
+    window.scrollTo(0, 0);
+
+    // ヒント生成開始
+    generateHints(apiKey, problem);
+  }
+
+  /* ---- ヒント生成 ---- */
+
+  async function generateHints(apiKey, problem) {
+    setLoading(true);
+    setHintBtn(false, '💡 ヒントをみる');
+
+    const systemPrompt = `あなたは小学2・3年生向けの算数の先生です。
+子供が自力でとけるよう、3段階のヒントを作ってください。
+
+【絶対に守るルール】
+- 答え（計算の結果の数字）は絶対に言わない
+- ヒント1：問題の意味をやさしく確かめる軽いヒント
+- ヒント2：どんな計算を使うかを気づかせるヒント
+- ヒント3：計算の手順まで案内するが、答えは言わない
+- 小学2・3年生にわかるやさしい言葉を使う
+- 絵文字を1〜2個使って楽しく書く
+
+必ず以下のJSON形式だけで回答してください（前後に余計なテキストは一切含めない）：
+{"hint1":"...","hint2":"...","hint3":"..."}`;
+
+    const endpoint =
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: 'user', parts: [{ text: `算数の問題：${problem}` }] }],
+          generationConfig: { maxOutputTokens: 1024 }
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error?.message || `APIエラー（ステータス ${res.status}）`);
+      }
+
+      const data = await res.json();
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+
+      // マークダウンコードブロックを除去してからパース
+      const json = raw.replace(/^```json?\s*/i, '').replace(/\s*```$/, '').trim();
+      const parsed = JSON.parse(json);
+
+      if (!parsed.hint1 || !parsed.hint2 || !parsed.hint3) {
+        throw new Error('ヒントのデータが正しく取得できませんでした');
+      }
+
+      hints = [parsed.hint1, parsed.hint2, parsed.hint3];
+      hintsReady = true;
+      setLoading(false);
+      setHintBtn(true, '💡 ヒントをみる');
+      updateCounter();
+
+    } catch (e) {
+      setLoading(false);
+      setErrorBox(`❌ エラーが発生しました：${e.message}\nAPIキーを確認してもう一度試してください`);
+      setHintBtn(true, '🔄 やり直す');
+    }
+  }
+
+  /* ---- ヒント表示 ---- */
+
+  function showNextHint() {
+    if (!hintsReady) {
+      alert('ヒントをじゅんびちゅうだよ。もう少し待ってね！');
+      return;
+    }
+    if (currentIndex >= MAX_HINTS) return;
+
+    const labels  = ['ヒント1', 'ヒント2', 'ヒント3'];
+    const classes = ['hint-1', 'hint-2', 'hint-3'];
+
+    const card = document.createElement('div');
+    card.className = `hint-card ${classes[currentIndex]}`;
+    card.innerHTML = `
+      <div class="hint-badge">${labels[currentIndex]}</div>
+      <div class="hint-text">${escHtml(hints[currentIndex])}</div>
+    `;
+    document.getElementById('hints-container').appendChild(card);
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    currentIndex++;
+    updateCounter();
+
+    if (currentIndex >= MAX_HINTS) {
+      setHintBtn(false, '✅ ヒントはここまでだよ！');
+
+      const done = document.createElement('div');
+      done.className = 'done-msg';
+      done.textContent = '💪 ここまでのヒントでがんばってみよう！';
+      document.getElementById('hints-container').appendChild(done);
+      done.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  /* ---- 戻る ---- */
+
+  function backToParent() {
+    document.getElementById('child-screen').classList.add('hidden');
+    document.getElementById('parent-screen').classList.remove('hidden');
+    document.getElementById('problem-input').value = '';
+    window.scrollTo(0, 0);
+  }
+
+  /* ---- ヘルパー ---- */
+
+  function updateCounter() {
+    const remaining = MAX_HINTS - currentIndex;
+    const el = document.getElementById('hint-counter');
+    el.textContent = remaining > 0 ? `ヒントはあと ${remaining} かいみられるよ` : '';
+  }
+
+  function setLoading(show) {
+    document.getElementById('loading-box').classList.toggle('hidden', !show);
+  }
+
+  function setHintBtn(enabled, text) {
+    const btn = document.getElementById('hint-btn');
+    btn.disabled = !enabled;
+    btn.textContent = text;
+  }
+
+  function setErrorBox(msg, hide = false) {
+    const el = document.getElementById('error-box');
+    if (hide || !msg) {
+      el.classList.add('hidden');
+      el.textContent = '';
+    } else {
+      el.classList.remove('hidden');
+      el.textContent = msg;
+    }
+  }
+
+  function escHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /* ---- 起動時 ---- */
+  window.addEventListener('load', () => {
+    const saved = localStorage.getItem('math_hint_gemini_api_key');
+    if (saved) document.getElementById('api-key').value = saved;
+  });
+</script>
+</body>
+</html>
