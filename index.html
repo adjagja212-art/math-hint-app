@@ -304,7 +304,7 @@
     if (!problem) { alert('もんだいを入力してください'); return; }
 
     // API キーを保存
-    saveApiKey(apiKey);
+    localStorage.setItem('math_hint_gemini_api_key', apiKey);
 
     // 子供画面の初期化
     hints = [];
@@ -471,24 +471,9 @@
       .replace(/'/g, '&#39;');
   }
 
-  /* ---- Cache Storage：APIキーの保存・読み込み ---- */
-  const CACHE_NAME = 'math-hint-settings';
-  const API_KEY_URL = '/math-hint-api-key';
-
-  async function saveApiKey(key) {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.put(API_KEY_URL, new Response(key));
-  }
-
-  async function loadApiKey() {
-    const cache = await caches.open(CACHE_NAME);
-    const res = await cache.match(API_KEY_URL);
-    return res ? res.text() : null;
-  }
-
   /* ---- 起動時 ---- */
-  window.addEventListener('load', async () => {
-    const saved = await loadApiKey();
+  window.addEventListener('load', () => {
+    const saved = localStorage.getItem('math_hint_gemini_api_key');
     if (saved) document.getElementById('api-key').value = saved;
   });
 </script>
